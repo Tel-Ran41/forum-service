@@ -1,5 +1,7 @@
 package telran.java41.forum.service;
 
+import java.time.LocalDateTime;
+import java.time.LocalTime;
 import java.util.List;
 
 import org.modelmapper.ModelMapper;
@@ -12,6 +14,7 @@ import telran.java41.forum.dto.NewCommentDto;
 import telran.java41.forum.dto.NewPostDto;
 import telran.java41.forum.dto.PostDto;
 import telran.java41.forum.dto.exceptions.PostNotFoundException;
+import telran.java41.forum.model.Comment;
 import telran.java41.forum.model.Post;
 
 @Service
@@ -49,8 +52,17 @@ public class ForumServiceImpl implements ForumService {
 
 	@Override
 	public PostDto updatePost(NewPostDto postUpdateDto, String id) {
-		// TODO Auto-generated method stub
-		return null;
+		Post post = postRepository.findById(id).orElseThrow(() -> new PostNotFoundException(id));
+		if(postUpdateDto.getTitle() != null) {
+			post.setTitle(postUpdateDto.getTitle());
+		}
+		if(postUpdateDto.getContent() != null) {
+			post.setContent(postUpdateDto.getContent());
+		}
+		post.getTags().clear();
+		post.getTags().addAll(postUpdateDto.getTags());
+		post = postRepository.save(post);
+		return modelMapper.map(post, PostDto.class);
 	}
 
 	@Override
@@ -62,26 +74,26 @@ public class ForumServiceImpl implements ForumService {
 
 	@Override
 	public PostDto addComment(String id, String author, NewCommentDto newCommentDto) {
-		// TODO Auto-generated method stub
-		return null;
+		Post post = postRepository.findById(id).orElseThrow(() -> new PostNotFoundException(id));
+		post.addComment(new Comment(author, newCommentDto.getMessage()));
+		postRepository.save(post);
+		return modelMapper.map(post, PostDto.class);
 	}
 
 	@Override
 	public Iterable<PostDto> findPostsByAuthor(String author) {
-		// TODO Auto-generated method stub
-		return null;
+		return postRepository.findByAuthorIgnoreCase(author);
 	}
 
 	@Override
 	public Iterable<PostDto> findPostsByTags(List<String> tags) {
-		// TODO Auto-generated method stub
-		return null;
+		return postRepository.findByTagsInIgnoreCase(tags);
 	}
 
 	@Override
 	public Iterable<PostDto> findPostsByDates(DatePeriodDto datePeriodDto) {
-		// TODO Auto-generated method stub
-		return null;
+		LocalDateTime dateFrom = LocalDateTime.of(datePeriodDto.getDateFrom(), LocalTime.MIN);
+		LocalDateTime ToFrom = LocalDateTime.of(datePeriodDto.getDateTo(), LocalTime.MAX);
+		return postRepository.findPostsByPeriod(dateFrom, ToFrom);
 	}
-
 }
