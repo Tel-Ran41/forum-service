@@ -1,8 +1,7 @@
 package telran.java41.forum.service;
 
-import java.time.LocalDateTime;
-import java.time.LocalTime;
 import java.util.List;
+import java.util.stream.Collectors;
 
 import org.modelmapper.ModelMapper;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -53,14 +52,22 @@ public class ForumServiceImpl implements ForumService {
 	@Override
 	public PostDto updatePost(NewPostDto postUpdateDto, String id) {
 		Post post = postRepository.findById(id).orElseThrow(() -> new PostNotFoundException(id));
-		if(postUpdateDto.getTitle() != null) {
-			post.setTitle(postUpdateDto.getTitle());
+		String title = postUpdateDto.getTitle();
+		if (title != null) {
+			post.setTitle(title);
 		}
-		if(postUpdateDto.getContent() != null) {
-			post.setContent(postUpdateDto.getContent());
+		String content = postUpdateDto.getContent();
+		if (content != null) {
+			post.setContent(content);
 		}
+//		My code. Tag update:
 		post.getTags().clear();
 		post.getTags().addAll(postUpdateDto.getTags());
+//		Code from Edd. Adding tags:
+//		Set<String> tags = postUpdateDto.getTags();
+//		if(tags != null) {
+//			tags.forEach(post::addTag);
+//		}
 		post = postRepository.save(post);
 		return modelMapper.map(post, PostDto.class);
 	}
@@ -82,18 +89,39 @@ public class ForumServiceImpl implements ForumService {
 
 	@Override
 	public Iterable<PostDto> findPostsByAuthor(String author) {
-		return postRepository.findByAuthorIgnoreCase(author);
+//	My code. Method findByAuthorIgnoreCase(author) return PostDto:		
+//		return postRepository.findByAuthorIgnoreCase(author);
+		
+//	Code from Edd. Return Post:		
+		return postRepository.findByAuthorIgnoreCase(author)
+				.map(p -> modelMapper.map(p, PostDto.class))
+				.collect(Collectors.toList());
 	}
 
 	@Override
 	public Iterable<PostDto> findPostsByTags(List<String> tags) {
-		return postRepository.findByTagsInIgnoreCase(tags);
+//	My code. Method findByTagsInIgnoreCase(tags) return PostDto:		
+//		return postRepository.findByTagsInIgnoreCase(tags);
+
+//		Code from Edd. Return Post:
+		return postRepository.findByTagsInIgnoreCase(tags)
+				.map(p -> modelMapper.map(p, PostDto.class))
+				.collect(Collectors.toList());
 	}
 
 	@Override
-	public Iterable<PostDto> findPostsByDates(DatePeriodDto datePeriodDto) {
-		LocalDateTime dateFrom = LocalDateTime.of(datePeriodDto.getDateFrom(), LocalTime.MIN);
-		LocalDateTime ToFrom = LocalDateTime.of(datePeriodDto.getDateTo(), LocalTime.MAX);
-		return postRepository.findPostsByPeriod(dateFrom, ToFrom);
+		
+		public Iterable<PostDto> findPostsByDates(DatePeriodDto datePeriodDto) {
+// My code. Method findPostsByPeriod(LocalDateTime dateFrom, LocalDateTime dateTo) return PostDto:	
+//		LocalDateTime dateFrom = LocalDateTime.of(datePeriodDto.getDateFrom(), LocalTime.MIN);
+//		LocalDateTime dateTo = LocalDateTime.of(datePeriodDto.getDateTo(), LocalTime.MAX);
+//		return postRepository.findPostsByPeriod(dateFrom, dateTo);
+//	}
+	
+// Edd's code:
+		return postRepository.findByDateCreatedBetween(datePeriodDto.getDateFrom(), datePeriodDto.getDateTo())
+				.map(p -> modelMapper.map(p, PostDto.class))
+				.collect(Collectors.toList());	
 	}
+	
 }
