@@ -6,15 +6,15 @@ import org.springframework.web.bind.annotation.ResponseStatus;
 import lombok.NoArgsConstructor;
 
 @NoArgsConstructor
-@ResponseStatus(HttpStatus.NOT_FOUND)
-public class RoleNotFoundException extends RuntimeException {
+@ResponseStatus(HttpStatus.CONFLICT)
+public class RoleChangeException extends RuntimeException {
 
 	/**
 	 * 
 	 */
 	private static final long serialVersionUID = -4267983824443383296L;
 
-	public RoleNotFoundException(String message) {
+	public RoleChangeException(String message) {
 		super(message);
 	}
 }

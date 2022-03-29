@@ -1,6 +1,6 @@
 package telran.java41.accounting.controller;
 
-import java.util.Base64;
+import java.security.Principal;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.DeleteMapping;
@@ -35,9 +35,8 @@ public class UserAccountController {
 	}
 
 	@PostMapping("/login")
-	public UserAccountResponseDto login(@RequestHeader("Authorization") String token) {
-		String login = getLoginFromToken(token);
-		return accountService.getUser(login);
+	public UserAccountResponseDto login(Principal principal) {
+		return accountService.getUser(principal.getName());
 	}
 
 	@DeleteMapping("/user/{login}")
@@ -49,28 +48,20 @@ public class UserAccountController {
 	public UserAccountResponseDto updateUser(@PathVariable String login, @RequestBody UserUpdateDto userUpdateDto) {
 		return accountService.editUser(login, userUpdateDto);
 	}
-	
+
 	@PutMapping("/user/{login}/role/{role}")
 	public RolesResponseDto addRole(@PathVariable String login, @PathVariable String role) {
 		return accountService.changeRolesList(login, role, true);
 	}
-	
+
 	@DeleteMapping("/user/{login}/role/{role}")
 	public RolesResponseDto removeRole(@PathVariable String login, @PathVariable String role) {
 		return accountService.changeRolesList(login, role, false);
 	}
-	
-	@PutMapping("/password")
-	public void changePassword(@RequestHeader("Authorization") String token, @RequestHeader("X-Password")  String newPassword) {
-		String login = getLoginFromToken(token);
-		accountService.changePassword(login, newPassword);
-	}
 
-	private String getLoginFromToken(String token) {
-		token = token.split(" ")[1];
-		String decode = new String(Base64.getDecoder().decode(token));
-		String[] credentials = decode.split(":");
-		return credentials[0];
+	@PutMapping("/password")
+	public void changePassword(Principal principal, @RequestHeader("X-Password") String newPassword) {
+		accountService.changePassword(principal.getName(), newPassword);
 	}
 
 }
