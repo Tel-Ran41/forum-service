@@ -10,6 +10,7 @@ import telran.java41.accounting.dto.RolesResponseDto;
 import telran.java41.accounting.dto.UserAccountResponseDto;
 import telran.java41.accounting.dto.UserRegisterDto;
 import telran.java41.accounting.dto.UserUpdateDto;
+import telran.java41.accounting.dto.exceptions.RoleChangeException;
 import telran.java41.accounting.dto.exceptions.UserExistsException;
 import telran.java41.accounting.dto.exceptions.UserNotFoundException;
 import telran.java41.accounting.model.UserAccount;
@@ -66,15 +67,18 @@ public class UserAccountServiceImpl implements UserAccountService {
 	@Override
 	public RolesResponseDto changeRolesList(String login, String role, boolean isAddRole) {
 		UserAccount userAccount = repository.findById(login).orElseThrow(() -> new UserNotFoundException());
-		boolean res;
 		if (isAddRole) {
-			res = userAccount.addRole(role.toUpperCase());
+			if (!userAccount.addRole(role.toUpperCase())) {
+				throw new RoleChangeException("Unable to add role. The role " + role + " already exists for the user "
+						+ userAccount.getLogin());
+			}
 		} else {
-			res = userAccount.removeRole(role.toUpperCase());
+			if (!userAccount.removeRole(role.toUpperCase())) {
+				throw new RoleChangeException("The role cannot be deleted. The role of " + role
+						+ " is not for the user " + userAccount.getLogin());
+			}
 		}
-		if (res) {
-			repository.save(userAccount);
-		}	
+		repository.save(userAccount);
 		return modelMapper.map(userAccount, RolesResponseDto.class);
 	}
 
@@ -85,5 +89,4 @@ public class UserAccountServiceImpl implements UserAccountService {
 		userAccount.setPassword(password);
 		repository.save(userAccount);
 	}
-
 }

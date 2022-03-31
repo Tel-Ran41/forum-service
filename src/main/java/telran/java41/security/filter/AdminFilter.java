@@ -10,23 +10,19 @@ import javax.servlet.ServletResponse;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.core.annotation.Order;
 import org.springframework.stereotype.Service;
 
-import telran.java41.accounting.dao.UserAccountRepository;
-import telran.java41.accounting.model.UserAccount;
+import lombok.AllArgsConstructor;
+import telran.java41.security.context.SecurityContext;
+import telran.java41.security.context.User;
 
 @Service
 @Order(20)
+@AllArgsConstructor
 public class AdminFilter implements Filter {
 
-	UserAccountRepository repository;
-
-	@Autowired
-	public AdminFilter(UserAccountRepository repository) {
-		this.repository = repository;
-	}
+	SecurityContext context;
 
 	@Override
 	public void doFilter(ServletRequest req, ServletResponse resp, FilterChain chain)
@@ -34,8 +30,8 @@ public class AdminFilter implements Filter {
 		HttpServletRequest request = (HttpServletRequest) req;
 		HttpServletResponse response = (HttpServletResponse) resp;
 		if (checkEndPoint(request.getMethod(), request.getServletPath())) {
-			UserAccount userAccount = repository.findById(request.getUserPrincipal().getName()).get();
-			if (!userAccount.getRoles().contains("Administrator".toUpperCase())) {
+			User user = context.getUser(request.getUserPrincipal().getName());
+			if (!user.getRoles().contains("Administrator".toUpperCase())) {
 				response.sendError(403);
 				return;
 			}

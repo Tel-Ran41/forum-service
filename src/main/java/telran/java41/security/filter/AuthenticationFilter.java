@@ -14,23 +14,25 @@ import javax.servlet.http.HttpServletRequestWrapper;
 import javax.servlet.http.HttpServletResponse;
 
 import org.mindrot.jbcrypt.BCrypt;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.core.annotation.Order;
 import org.springframework.stereotype.Service;
 
+import lombok.AllArgsConstructor;
 import telran.java41.accounting.dao.UserAccountRepository;
 import telran.java41.accounting.model.UserAccount;
+import telran.java41.security.context.SecurityContext;
+import telran.java41.security.context.User;
+import telran.java41.security.service.SessionService;
 
 @Service
 @Order(10)
+@AllArgsConstructor
 public class AuthenticationFilter implements Filter {
 
 	UserAccountRepository repository;
+	SessionService sessionService;
+	SecurityContext context;
 
-	@Autowired
-	public AuthenticationFilter(UserAccountRepository repository) {
-		this.repository = repository;
-	}
 
 	@Override
 	public void doFilter(ServletRequest req, ServletResponse resp, FilterChain chain)
@@ -38,27 +40,38 @@ public class AuthenticationFilter implements Filter {
 		HttpServletRequest request = (HttpServletRequest) req;
 		HttpServletResponse response = (HttpServletResponse) resp;	
 		if (checkEndPoint(request.getMethod(), request.getServletPath())) {
-			String token = request.getHeader("Authorization");
-			String[] credentials;
-			try {
-				credentials = getCredentialsFromToken(token);
-			} catch (Exception e) {
-				response.sendError(401, "Token not valid");
-				return;
+			String sessionId = request.getSession().getId();
+			UserAccount userAccount = sessionService.getUser(sessionId);
+			if (userAccount == null) {
+				String token = request.getHeader("Authorization");
+				String[] credentials;
+				try {
+					credentials = getCredentialsFromToken(token);
+				} catch (Exception e) {
+					response.sendError(401, "Token not valid");
+					return;
+				}
+				userAccount = repository.findById(credentials[0]).orElse(null);
+				if (userAccount == null || !BCrypt.checkpw(credentials[1], userAccount.getPassword())) {
+					response.sendError(401, "User or password not valid");
+					return;
+				}
+				sessionService.addUser(sessionId, userAccount);
 			}
-			UserAccount userAccount = repository.findById(credentials[0]).orElse(null);
-			if (userAccount == null || !BCrypt.checkpw(credentials[1], userAccount.getPassword())) {
-				response.sendError(401, "User or password not valid");
-				return;
-			} 
 			request = new WrappedRequest(request, userAccount.getLogin());
+			User user = User.builder()
+								.userName(userAccount.getLogin())
+								.password(userAccount.getPassword())
+								.roles(userAccount.getRoles())
+								.build();
+			context.addUser(user);
 		}
 		chain.doFilter(request, response);
 	}
 
 	private boolean checkEndPoint(String method, String path) {
-		return !("POST".equalsIgnoreCase(method) && path.matches("/account/register/?"))
-				&& !(("GET".equalsIgnoreCase(method) || "POST".equalsIgnoreCase(method)) && path.matches("/forum/posts/.*"));
+		return !("POST".equalsIgnoreCase(method) && path.matches("/account/register/?")
+				|| (path.matches("/forum/posts(/\\w+)+/?")));
 	}
 
 	private String[] getCredentialsFromToken(String token) {

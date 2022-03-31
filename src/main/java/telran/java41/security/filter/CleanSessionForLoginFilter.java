@@ -14,19 +14,17 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.core.annotation.Order;
 import org.springframework.stereotype.Service;
 
-import telran.java41.forum.dao.PostRepository;
-import telran.java41.forum.dto.exceptions.PostNotFoundException;
-import telran.java41.forum.model.Post;
+import telran.java41.security.service.SessionService;
 
 @Service
-@Order(25)
-public class PostAddLikeFilter implements Filter {
+@Order(5)
+public class CleanSessionForLoginFilter implements Filter {
 
-	PostRepository postRepository;
+	SessionService sessionService;
 
 	@Autowired
-	public PostAddLikeFilter(PostRepository postRepository) {
-		this.postRepository = postRepository;
+	public CleanSessionForLoginFilter(SessionService sessionService) {
+		this.sessionService = sessionService;
 	}
 
 	@Override
@@ -35,19 +33,14 @@ public class PostAddLikeFilter implements Filter {
 		HttpServletRequest request = (HttpServletRequest) req;
 		HttpServletResponse response = (HttpServletResponse) resp;
 		if (checkEndPoint(request.getMethod(), request.getServletPath())) {
-			String[] arrPathElem = request.getServletPath().split("/");
-			String pathId = arrPathElem[arrPathElem.length - 1];
-			Post post = postRepository.findById(pathId).orElseThrow(() -> new PostNotFoundException(pathId));
-			String principalLogin = request.getUserPrincipal().getName();
-			if (principalLogin.equals(post.getAuthor())) {
-				response.sendError(403);
-				return;
-			}
+			String sessionId = request.getSession().getId();
+			sessionService.removeUser(sessionId);
 		}
 		chain.doFilter(request, response);
 	}
 
 	private boolean checkEndPoint(String method, String path) {
-		return path.matches("/forum/post/\\w+/like/?") && ("PUT".equalsIgnoreCase(method));
+		return path.matches("/account/login/?");
 	}
+
 }

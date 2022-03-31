@@ -10,28 +10,23 @@ import javax.servlet.ServletResponse;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.core.annotation.Order;
 import org.springframework.stereotype.Service;
 
-import telran.java41.accounting.dao.UserAccountRepository;
-import telran.java41.accounting.model.UserAccount;
+import lombok.AllArgsConstructor;
 import telran.java41.forum.dao.PostRepository;
 import telran.java41.forum.dto.exceptions.PostNotFoundException;
 import telran.java41.forum.model.Post;
+import telran.java41.security.context.SecurityContext;
+import telran.java41.security.context.User;
 
 @Service
 @Order(21)
+@AllArgsConstructor
 public class PostDelFilter implements Filter {
 
 	PostRepository postRepository;
-	UserAccountRepository userRepository;
-
-	@Autowired
-	public PostDelFilter(PostRepository postRepository, UserAccountRepository userRepository) {
-		this.postRepository = postRepository;
-		this.userRepository = userRepository;
-	}
+	SecurityContext context;
 
 	@Override
 	public void doFilter(ServletRequest req, ServletResponse resp, FilterChain chain)
@@ -39,11 +34,12 @@ public class PostDelFilter implements Filter {
 		HttpServletRequest request = (HttpServletRequest) req;
 		HttpServletResponse response = (HttpServletResponse) resp;
 		if (checkEndPoint(request.getMethod(), request.getServletPath())) {
-			String pathId = request.getServletPath().split("/")[3];
-			Post post = postRepository.findById(pathId).orElseThrow(() -> new PostNotFoundException());
+			String[] arrPathElem = request.getServletPath().split("/");
+			String pathId = arrPathElem[arrPathElem.length - 1];
+			Post post = postRepository.findById(pathId).orElseThrow(() -> new PostNotFoundException(pathId));
 			String principalLogin = request.getUserPrincipal().getName();
 			if (!principalLogin.equals(post.getAuthor())) {
-				UserAccount user = userRepository.findById(principalLogin).get();
+				User user = context.getUser(principalLogin);
 				if (!user.getRoles().contains("Moderator".toUpperCase())) {
 					response.sendError(403);
 					return;

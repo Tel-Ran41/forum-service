@@ -35,8 +35,9 @@ public class PostUpdateFilter implements Filter {
 		HttpServletRequest request = (HttpServletRequest) req;
 		HttpServletResponse response = (HttpServletResponse) resp;
 		if (checkEndPoint(request.getMethod(), request.getServletPath())) {
-			String pathId = request.getServletPath().split("/")[3];
-			Post post = postRepository.findById(pathId).orElseThrow(() -> new PostNotFoundException());
+			String[] arrPathElem = request.getServletPath().split("/");
+			String pathId = arrPathElem[arrPathElem.length - 1];
+			Post post = postRepository.findById(pathId).orElseThrow(() -> new PostNotFoundException(pathId));
 			String principalLogin = request.getUserPrincipal().getName();
 			if (!principalLogin.equals(post.getAuthor())) {
 				response.sendError(403);

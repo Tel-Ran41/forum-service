@@ -23,7 +23,8 @@ public class UserUpdateFilter implements Filter {
 		HttpServletRequest request = (HttpServletRequest) req;
 		HttpServletResponse response = (HttpServletResponse) resp;
 		if (checkEndPoint(request.getMethod(), request.getServletPath())) {
-			String pathLogin = request.getServletPath().split("/")[3];
+			String[] arrPathElem = request.getServletPath().split("/");
+			String pathLogin = arrPathElem[arrPathElem.length - 1];
 			String principalLogin = request.getUserPrincipal().getName();
 			if (!principalLogin.equals(pathLogin)) {
 				response.sendError(403);

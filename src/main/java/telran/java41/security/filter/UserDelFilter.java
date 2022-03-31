@@ -10,23 +10,19 @@ import javax.servlet.ServletResponse;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.core.annotation.Order;
 import org.springframework.stereotype.Service;
 
-import telran.java41.accounting.dao.UserAccountRepository;
-import telran.java41.accounting.model.UserAccount;
+import lombok.AllArgsConstructor;
+import telran.java41.security.context.SecurityContext;
+import telran.java41.security.context.User;
 
 @Service
 @Order(19)
+@AllArgsConstructor
 public class UserDelFilter implements Filter {
 
-	UserAccountRepository repository;
-
-	@Autowired
-	public UserDelFilter(UserAccountRepository repository) {
-		this.repository = repository;
-	}
+	SecurityContext context;
 
 	@Override
 	public void doFilter(ServletRequest req, ServletResponse resp, FilterChain chain)
@@ -34,11 +30,12 @@ public class UserDelFilter implements Filter {
 		HttpServletRequest request = (HttpServletRequest) req;
 		HttpServletResponse response = (HttpServletResponse) resp;
 		if (checkEndPoint(request.getMethod(), request.getServletPath())) {
-			String pathLogin = request.getServletPath().split("/")[3];
+			String[] arrPathElem = request.getServletPath().split("/");
+			String pathLogin = arrPathElem[arrPathElem.length - 1];
 			String principalLogin = request.getUserPrincipal().getName();
 			if (!principalLogin.equals(pathLogin)) {
-				UserAccount userAccount = repository.findById(principalLogin).get();
-				if (!userAccount.getRoles().contains("Administrator".toUpperCase())) {
+				User user = context.getUser(principalLogin);
+				if (!user.getRoles().contains("Administrator".toUpperCase())) {
 					response.sendError(403);
 					return;
 				}
