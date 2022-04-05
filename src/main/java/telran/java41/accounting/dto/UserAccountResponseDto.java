@@ -1,5 +1,6 @@
 package telran.java41.accounting.dto;
 
+import java.time.LocalDateTime;
 import java.util.Set;
 
 import lombok.AllArgsConstructor;
@@ -18,6 +19,7 @@ public class UserAccountResponseDto {
 	String login;
 	String firstName;
 	String lastName;
+	LocalDateTime dateChangePassword;
 	@Singular
 	Set<String> roles;
 }

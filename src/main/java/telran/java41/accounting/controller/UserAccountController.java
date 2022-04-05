@@ -40,11 +40,13 @@ public class UserAccountController {
 	}
 
 	@DeleteMapping("/user/{login}")
+//	@PreAuthorize("#login == authentication.name or hasRole('ADMINISTRATOR')")
 	public UserAccountResponseDto removeUser(@PathVariable String login) {
 		return accountService.removeUser(login);
 	}
 
 	@PutMapping("/user/{login}")
+//	@PreAuthorize("#login == authentication.name")
 	public UserAccountResponseDto updateUser(@PathVariable String login, @RequestBody UserUpdateDto userUpdateDto) {
 		return accountService.editUser(login, userUpdateDto);
 	}
