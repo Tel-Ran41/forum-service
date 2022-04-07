@@ -1,6 +1,6 @@
 package telran.java41.accounting.model;
 
-import java.time.LocalDateTime;
+import java.time.LocalDate;
 import java.util.HashSet;
 import java.util.Set;
 
@@ -12,7 +12,7 @@ import lombok.Getter;
 import lombok.Setter;
 
 @Getter
-@EqualsAndHashCode(of = {"login"})
+@EqualsAndHashCode(of = { "login" })
 @Document(collection = "users")
 public class UserAccount {
 	@Id
@@ -25,12 +25,11 @@ public class UserAccount {
 	String lastName;
 	Set<String> roles;
 	@Setter
-	LocalDateTime dateChangePassword;
+	LocalDate dateChangePassword;
 
 	public UserAccount() {
 		roles = new HashSet<>();
 		roles.add("USER");
-		dateChangePassword = LocalDateTime.now().plusSeconds(20);
 	}
 
 	public UserAccount(String login, String password, String firstName, String lastName) {

@@ -1,6 +1,6 @@
 package telran.java41.security.service;
 
-import java.time.LocalDateTime;
+import java.time.LocalDate;
 
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.stereotype.Service;
@@ -32,7 +32,7 @@ public class CustomWebSecurity {
 				.orElseThrow(() -> new UsernameNotFoundException(userName));
 			sessionService.addUser(userName, userAccount);
 		}
-		if (LocalDateTime.now().compareTo(userAccount.getDateChangePassword()) < 0) {
+		if (LocalDate.now().isBefore(userAccount.getDateChangePassword())) {
 			return true;
 		}
 		sessionService.removeUser(userName);

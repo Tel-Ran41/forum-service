@@ -1,12 +1,13 @@
 package telran.java41.accounting.service;
 
-import java.time.LocalDateTime;
+import java.time.LocalDate;
 
 import org.modelmapper.ModelMapper;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
-import lombok.AllArgsConstructor;
 import telran.java41.accounting.dao.UserAccountRepository;
 import telran.java41.accounting.dto.RolesResponseDto;
 import telran.java41.accounting.dto.UserAccountResponseDto;
@@ -19,12 +20,21 @@ import telran.java41.accounting.model.UserAccount;
 import telran.java41.security.context.SessionService;
 
 @Service
-@AllArgsConstructor
 public class UserAccountServiceImpl implements UserAccountService {
 	UserAccountRepository repository;
 	ModelMapper modelMapper;
 	PasswordEncoder passwordEncoder;
 	SessionService sessionService;
+	@Value("${password.period:60}")
+	long passwordPeriod;
+	
+	@Autowired
+	public UserAccountServiceImpl(UserAccountRepository repository, ModelMapper modelMapper,
+			PasswordEncoder passwordEncoder) {
+		this.repository = repository;
+		this.modelMapper = modelMapper;
+		this.passwordEncoder = passwordEncoder;
+	}
 
 	@Override
 	public UserAccountResponseDto addUser(UserRegisterDto userRegisterDto) {
@@ -34,6 +44,7 @@ public class UserAccountServiceImpl implements UserAccountService {
 		UserAccount userAccount = modelMapper.map(userRegisterDto, UserAccount.class);
 		String password = passwordEncoder.encode(userRegisterDto.getPassword());
 		userAccount.setPassword(password);
+		userAccount.setDateChangePassword(LocalDate.now().plusDays(passwordPeriod));
 		repository.save(userAccount);
 		return modelMapper.map(userAccount, UserAccountResponseDto.class);
 	}
@@ -87,7 +98,7 @@ public class UserAccountServiceImpl implements UserAccountService {
 		UserAccount userAccount = repository.findById(login).orElseThrow(() -> new UserNotFoundException());
 		String password = passwordEncoder.encode(newPassword);
 		userAccount.setPassword(password);
-		userAccount.setDateChangePassword(LocalDateTime.now().plusSeconds(20));
+		userAccount.setDateChangePassword(LocalDate.now().plusDays(passwordPeriod));
 		sessionService.addUser(login, userAccount);
 		repository.save(userAccount);
 	}
